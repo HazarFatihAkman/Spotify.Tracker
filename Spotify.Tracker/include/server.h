@@ -12,8 +12,7 @@
 #include <unistd.h>
 #include <pthread.h>
 
-typedef struct Server
-{
+typedef struct Server {
     int server_socket, client_socket;
     struct SpotifyApp spotify_app;
 } Server;
@@ -31,6 +30,7 @@ extern const struct ServerConst {
 #define INFO_CURRENT_TRACK "[Info - Current Track] : %s by %s - %s\n-------------------------------------------------\n"
 #define INFO_CURRENT_TRACK_IMAGE "[Info - Current Track/Image] : %s\n-------------------------------------------------\n"
 #define INFO_CURRENT_TRACK_NOT_FOUND "[Info - Current Track] : Current track not found.\n-------------------------------------------------\n"
-#define ERROR_CREATE_THREAD "[Info] : Error creating thread\n-------------------------------------------------\n"
+#define ERROR_CREATE_THREAD "[Info - App] : Error creating thread\n-------------------------------------------------\n"
+#define INFO_APP_TIME "[Info - App Time] : Passed - %d\n-------------------------------------------------\n"
 
 #endif /* server_h */

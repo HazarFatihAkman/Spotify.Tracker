@@ -19,7 +19,7 @@ void run_command(char *command, char args[CHAR_SIZE]) {
     }
 
     if ((file_pipe = (FILE*)popen(command, "r")) == 0) {
-        fprintf(stderr, "popen failed.");
+        perror("popen failed.");
         exit(1);
     }
 
@@ -33,8 +33,9 @@ void run_command(char *command, char args[CHAR_SIZE]) {
 
     args[n] = '\0';
 
-    pclose(file_pipe);
-    fprintf(stderr, "[PCLOSE] : closed %s : %p.\n", args, args);
+    if (pclose(file_pipe) < 0) {
+        pclose(file_pipe);
+    }
 }
 
 static struct TrackInfo new_track_info(void) {
@@ -96,11 +97,14 @@ static void convert_json_data(struct SpotifyApp *spotify_app) {
     free(json_data);
 }
 
-void set_pid(pid_t pid) {
+pid_t set_pid(pid_t current_pid) {
     char temp_args[CHAR_SIZE];
     run_command(GET_APP_PID, temp_args);
-    if (pid != atoi(temp_args))
+
+    if (current_pid != atoi(temp_args))
     {
-        pid = atoi(temp_args);
+        return atoi(temp_args);
     }
+
+    return current_pid;
 }

@@ -86,3 +86,4 @@ __MACOSX
 # C
 *.swp
 *~
+*.xcuserstate

@@ -12,18 +12,23 @@
 #define PORT 3131
 
 void* check_app_status(void *args) {
+    int passed_seconds = 0;
     SpotifyApp* spotify_app = (SpotifyApp*)args;
-    spotify_app->pid = malloc(sizeof(pid_t));
+    spotify_app->pid = 0;
 
     while (1) {
-        set_pid(spotify_app->pid);
+        spotify_app->pid = set_pid(spotify_app->pid);
 
         if (spotify_app->pid == 0) {
             fprintf(stderr, INFO_SPOTIYF_CLOSED);
         }
         else {
             fprintf(stderr, INFO_SPOTIYF_RUNNING);
+            spotify_app->current_track.current_time++;
         }
+
+        passed_seconds++;
+        fprintf(stderr, INFO_APP_TIME, passed_seconds);
         sleep(1);
     }
 }
@@ -39,13 +44,14 @@ void* track_app(void *args) {
             if (spotify_app->current_track.paused == false) {
                 fprintf(stderr, INFO_CURRENT_TRACK, spotify_app->current_track.name, spotify_app->current_track.artist, spotify_app->current_track.album);
                 fprintf(stderr, INFO_CURRENT_TRACK_IMAGE, spotify_app->current_track.cover_src);
+                sleep(5);
             }
         }
         else {
             fprintf(stderr, INFO_CURRENT_TRACK_NOT_FOUND);
+            sleep(10);
         }
 
-        sleep(2);
     }
 }
 
@@ -72,14 +78,15 @@ void* send_spotify_info(void *args) {
     Server* server = (Server*) args;
     while(1) {
         server->client_socket = accept(server->server_socket, NULL, NULL);
-
-        char buffer[1024] = {0};
-        read(server->client_socket, buffer, 1024);
-        printf("Received request:\n%s\n", buffer);
-
-        char *server_message = malloc(DEFAULT_SIZE * sizeof(char));
-
-        char *template =
+        if (server->spotify_app.pid != 0) {
+            fprintf(stderr, "I'm sending -> %d\n", server->spotify_app.pid);
+            char buffer[1024] = {0};
+            read(server->client_socket, buffer, 1024);
+            printf("Received request:\n%s\n", buffer);
+            
+            char *server_message = malloc(DEFAULT_SIZE * sizeof(char));
+            
+            char *template =
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/json\r\n"
             "Access-Control-Allow-Origin: *\r\n"
@@ -88,14 +95,18 @@ void* send_spotify_info(void *args) {
             "Connection: close\r\n"  // Ensure the connection is closed properly
             "\r\n"
             "%s";
-
-        SpotifyAppConst.convert_json_data(&server->spotify_app);
-        sprintf(server_message, template, server->spotify_app.json_data);
-
-        send(server->client_socket, server_message, strlen(server_message), 0);
-        fprintf(stderr, "[Server Info] : Message Send successful. client : %d, server : %d\n-------------------------------------------------\n", server->client_socket, server->server_socket);
-        
-        shutdown(server->client_socket, SHUT_RDWR);
+            
+            SpotifyAppConst.convert_json_data(&server->spotify_app);
+            sprintf(server_message, template, server->spotify_app.json_data);
+            
+            send(server->client_socket, server_message, strlen(server_message), 0);
+            fprintf(stderr, "[Server Info] : Message Send successful. client : %d, server : %d\n-------------------------------------------------\n", server->client_socket, server->server_socket);
+            
+            shutdown(server->client_socket, SHUT_RDWR);
+        }
+        else {
+            shutdown(server->client_socket, SHUT_RDWR);
+        }
     }
 }
 

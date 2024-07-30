@@ -37,7 +37,7 @@ extern const struct SpotifyAppConst {
 } SpotifyAppConst;
 
 void set_track_info(struct TrackInfo *);
-void set_pid(pid_t);
+pid_t set_pid(pid_t);
 void run_command(char*, char*);
 
 #if defined(__APPLE__) || defined(__MACH__)
