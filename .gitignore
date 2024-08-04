@@ -87,3 +87,6 @@ __MACOSX
 *.swp
 *~
 *.xcuserstate
+
+/.vscode
+.vscode/
