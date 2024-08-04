@@ -8,7 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		F503A14F2C51FC5E004C3A0E /* spotify_application.c in Sources */ = {isa = PBXBuildFile; fileRef = F503A14E2C51FC5E004C3A0E /* spotify_application.c */; };
-		F56CB48E2C3EC077008DFBF0 /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = F56CB48D2C3EC077008DFBF0 /* server.c */; };
+		F529D0552C5BFA690050FEB0 /* spotify_api.c in Sources */ = {isa = PBXBuildFile; fileRef = F529D0542C5BFA690050FEB0 /* spotify_api.c */; };
+		F529D0582C5C2CA80050FEB0 /* app_resources.c in Sources */ = {isa = PBXBuildFile; fileRef = F529D0572C5C2CA80050FEB0 /* app_resources.c */; };
+		F56CB48E2C3EC077008DFBF0 /* server_old.c in Sources */ = {isa = PBXBuildFile; fileRef = F56CB48D2C3EC077008DFBF0 /* server_old.c */; };
 		F5E3CAFD2C39107F003E5B41 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = F5E3CAFC2C39107F003E5B41 /* main.c */; };
 /* End PBXBuildFile section */
 
@@ -27,8 +29,12 @@
 /* Begin PBXFileReference section */
 		F503A14D2C51FC5E004C3A0E /* spotify_application.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = spotify_application.h; sourceTree = "<group>"; };
 		F503A14E2C51FC5E004C3A0E /* spotify_application.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = spotify_application.c; sourceTree = "<group>"; };
-		F56CB48C2C3EC077008DFBF0 /* server.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = server.h; sourceTree = "<group>"; };
-		F56CB48D2C3EC077008DFBF0 /* server.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = server.c; sourceTree = "<group>"; };
+		F529D0532C5BFA690050FEB0 /* spotify_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = spotify_api.h; sourceTree = "<group>"; };
+		F529D0542C5BFA690050FEB0 /* spotify_api.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = spotify_api.c; sourceTree = "<group>"; };
+		F529D0562C5C2CA80050FEB0 /* app_resources.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = app_resources.h; sourceTree = "<group>"; };
+		F529D0572C5C2CA80050FEB0 /* app_resources.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = app_resources.c; sourceTree = "<group>"; };
+		F56CB48C2C3EC077008DFBF0 /* server_old.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = server_old.h; sourceTree = "<group>"; };
+		F56CB48D2C3EC077008DFBF0 /* server_old.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = server_old.c; sourceTree = "<group>"; };
 		F5E3CAF92C39107F003E5B41 /* Spotify.Tracker */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Spotify.Tracker; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5E3CAFC2C39107F003E5B41 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -73,8 +79,10 @@
 		F5E5CBB32C4B9DA000D74894 /* include */ = {
 			isa = PBXGroup;
 			children = (
-				F56CB48C2C3EC077008DFBF0 /* server.h */,
+				F56CB48C2C3EC077008DFBF0 /* server_old.h */,
 				F503A14D2C51FC5E004C3A0E /* spotify_application.h */,
+				F529D0532C5BFA690050FEB0 /* spotify_api.h */,
+				F529D0562C5C2CA80050FEB0 /* app_resources.h */,
 			);
 			path = include;
 			sourceTree = "<group>";
@@ -82,8 +90,10 @@
 		F5E5CBB42C4B9DA500D74894 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				F529D0542C5BFA690050FEB0 /* spotify_api.c */,
 				F503A14E2C51FC5E004C3A0E /* spotify_application.c */,
-				F56CB48D2C3EC077008DFBF0 /* server.c */,
+				F56CB48D2C3EC077008DFBF0 /* server_old.c */,
+				F529D0572C5C2CA80050FEB0 /* app_resources.c */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -145,8 +155,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F529D0552C5BFA690050FEB0 /* spotify_api.c in Sources */,
 				F5E3CAFD2C39107F003E5B41 /* main.c in Sources */,
-				F56CB48E2C3EC077008DFBF0 /* server.c in Sources */,
+				F56CB48E2C3EC077008DFBF0 /* server_old.c in Sources */,
+				F529D0582C5C2CA80050FEB0 /* app_resources.c in Sources */,
 				F503A14F2C51FC5E004C3A0E /* spotify_application.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

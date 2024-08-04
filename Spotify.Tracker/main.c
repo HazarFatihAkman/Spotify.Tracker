@@ -5,12 +5,13 @@
 //  Created by Hazar Fatih Akman on 6.07.2024.
 //
 
-#include "include/server.h"
-
-//TODO: send json data
+#include "include/spotify_api.h"
+#include "include/app_resources.h"
+#include <curl/curl.h>
 
 int main(void) {
-    Server server = ServerConst.new();
-    ServerConst.start_server(&server);
-    ServerConst.launch(server);
+    create_sources();
+    read_settings();
+    printf("%s\n", settings[0].value);
+    printf("%d\n", settings[0].value != NULL);
 }

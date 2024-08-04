@@ -13,15 +13,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define JSON_TRACK_INFO_TEMPLATE "{ \"name\": \"%s\", \"artist\" : \"%s\", \"album\" : \"%s\", \"cover_src\" : \"%s\", \"paused\" : %d, \"total_time\" : %ld, \"current_time\" : %ld }"
+#define JSON_TRACK_INFO_TEMPLATE "{ \"name\": \"%s\", \"artist\" : \"%s\", \"album\" : \"%s\", \"cover_src\" : \"%s\", \"paused\" : %d, \"total_time\" : %ld, \"current_time\" : %d }"
 #define JSON_TRACK_INFO_NULL_TEMPLATE "\"NULL\""
 #define JSON_DATA_TEMPLATE "{ \"track\" : %s }"
 #define DEFAULT_SIZE 1024
-#define CHAR_SIZE 50
 
 typedef struct TrackInfo {
-    char name[CHAR_SIZE], artist[CHAR_SIZE], album[CHAR_SIZE], cover_src[DEFAULT_SIZE];
-    long total_time, current_time;
+    char name[DEFAULT_SIZE], artist[DEFAULT_SIZE], album[DEFAULT_SIZE], cover_src[DEFAULT_SIZE];
+    long total_time;
+    int current_time;
     bool paused;
 } TrackInfo;
 
@@ -38,7 +38,7 @@ extern const struct SpotifyAppConst {
 
 void set_track_info(struct TrackInfo *);
 pid_t set_pid(pid_t);
-void run_command(char*, char*);
+void run_command(char*, char*, FILE*);
 
 #if defined(__APPLE__) || defined(__MACH__)
     //TODO: MacOS
