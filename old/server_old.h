@@ -4,7 +4,7 @@
 //
 //  Created by Hazar Fatih Akman on 10.07.2024.
 //
-
+/*
 #ifndef server_h
 #define server_h
 
@@ -37,3 +37,4 @@ extern const struct ServerConst {
 #define SERVER_APP_INFO "[Server Info] : Message Send successful. client : %d, server : %d\n-------------------------------------------------\n"
 
 #endif /* server_h */
+*/

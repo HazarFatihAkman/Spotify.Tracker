@@ -4,7 +4,7 @@
 //
 //  Created by Hazar Fatih Akman on 25.07.2024.
 //
-
+/*
 #ifndef spotify_application_h
 #define spotify_application_h
 
@@ -43,7 +43,7 @@ void run_command(char*, char*, FILE*);
 #if defined(__APPLE__) || defined(__MACH__)
     //TODO: MacOS
     #include <TargetConditionals.h>
-    #define GET_CURRENT_TRACK_SCRIPT "osascript -e 'tell application \"Spotify\"\n set currentTrack to current track\n set trackName to name of currentTrack\n return trackName\n end tell'"
+    #define GET_CURRENT_TRACK_SCRIPT "osascript -e 'tell application "Spotify"\n set currentTrack to current track\n set trackName to name of currentTrack\n return trackName\n end tell'"
     #define GET_CURRENT_ARTIST_NAME_SCRIPT "osascript -e 'tell application \"Spotify\"\n set currentTrack to current track\n set artistName to artist of currentTrack\n return artistName\n end tell'"
     #define GET_CURRENT_TRACK_ALBUM_NAME_SCRIPT "osascript -e 'tell application \"Spotify\"\n set currentTrack to current track\n set albumName to album of currentTrack\n return albumName\n end tell'"
     #define GET_CURRENT_TRACK_COVER_URL_SCRIPT "osascript -e 'tell application \"Spotify\"\n set currentTrack to current track\n set coverURL to artwork url of currentTrack\n return coverURL\n end tell'"
@@ -87,3 +87,4 @@ void run_command(char*, char*, FILE*);
 
 #endif /* spotify_application_h */
 
+*/

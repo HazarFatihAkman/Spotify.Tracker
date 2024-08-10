@@ -1,18 +1,15 @@
-//
-//  app_resources.c
-//  Spotify.Tracker
-//
-//  Created by Hazar Fatih Akman on 1.08.2024.
-//
-
 #include "../include/app_resources.h"
 
-JsonObject settings[] = {
-    {"client_id", NULL},
-    {"client_secret", NULL},
-    {"access_token", NULL},
-    {"refresh_token", NULL},
-    {"token_type", NULL}
+const char char_array[CHAR_ARRAY_SIZE] = { '{', '}', '"', '\n', '\\', '\t', '\"', ' ' };
+
+JsonObject temp_settings[SETTINGS_SIZE] = {
+    {CLIENT_ID, NULL},
+    {CLIENT_SECRET, NULL},
+    {ACCESS_TOKEN, NULL},
+    {EXPIRE_IN, NULL},
+    {REFRESH_TOKEN, NULL},
+    {TOKEN_TYPE, NULL},
+    {AUTHORIZATION_CODE, NULL}
 };
 
 int create_folder(char *folder_path) {
@@ -57,10 +54,8 @@ int create_file(char *folder_path, char *file_path) {
 }
 
 int create_sources(void) {
-    int settings_folder_status = create_folder(SETTINGS_FOLDER);
-    if (settings_folder_status == 0) {
-        int settings_file_status = create_file(SETTINGS_FOLDER, SETTINGS_JSON_FILE);
-        if (settings_file_status == -1) {
+    if (create_folder(SETTINGS_FOLDER) == 0) {
+        if (create_file(SETTINGS_FOLDER, SETTINGS_JSON_FILE) == -1) {
             PRINT_ERROR(SETTINGS_JSON_FILE);
             exit(EXIT_FAILURE);
         }
@@ -70,10 +65,8 @@ int create_sources(void) {
         exit(EXIT_FAILURE);
     }
 
-    int spotify_folder_status = create_folder(SPOTIFY_HTML_FOLDER);
-    if (spotify_folder_status == 0) {
-        int spotify_html_file_status = create_file(SPOTIFY_HTML_FOLDER, SPOTIFY_HTML_FILE);
-        if (spotify_html_file_status == -1) {
+    if (create_folder(SPOTIFY_HTML_FOLDER) == 0) {
+        if (create_file(SPOTIFY_HTML_FOLDER, SPOTIFY_HTML_FILE) == -1) {
             PRINT_ERROR(SPOTIFY_HTML_FILE);
             exit(EXIT_FAILURE);
         }
@@ -83,7 +76,7 @@ int create_sources(void) {
         exit(EXIT_FAILURE);
     }
 
-    return 0;
+    return 1;
 }
 
 void remove_char(char *str, char remove_char) {
@@ -95,75 +88,64 @@ void remove_char(char *str, char remove_char) {
     }
 }
 
-void get_settings_value(char *file_str, struct JsonObject *settings_data) {
-    char *temp_file_str = malloc(BUFFER_SIZE * sizeof(char));
-    char *token = malloc(BUFFER_SIZE * sizeof(char));
-    char *new_token = malloc(BUFFER_SIZE * sizeof(char));
-    strcpy(temp_file_str, file_str);
+char* get_settings_value(char *str, struct JsonObject settings_data) {
+    char *temp_str = malloc(BUFFER_SIZE * sizeof(char)),
+         *token = malloc(BUFFER_SIZE * sizeof(char)),
+         *old_token = malloc(BUFFER_SIZE * sizeof(char)),
+         *response = malloc(BUFFER_SIZE * sizeof(char));
 
-    if (strstr(temp_file_str, ",")) {
-        token = strtok(temp_file_str, ",");
+    strcpy(temp_str, str);
 
-        while (token != NULL) {
-            if (strstr(token, settings_data->key)) {
-                new_token = strtok(token, ":");
+    char *delimineter = strchr(temp_str, ',') ? "," : ":";
+    token = strtok(temp_str, delimineter);
 
-                while (new_token != NULL) {
-                    remove_char(new_token, ',');
-                    if (strstr(new_token, settings_data->key) == 0) {
-                        settings_data->value = new_token;
-                    }
-                    new_token = strtok(NULL, ":");
-                }
+    while (token != NULL && token[0] != ' ') {
+        if (delimineter == ",") {
+            if (strstr(token, settings_data.key)) {
+                return get_settings_value(token, settings_data);
             }
-            token = strtok(NULL, ",");
         }
-    }
-    else {
-        token = strtok(temp_file_str, ":");
-
-        while (token != NULL) {
+        else if (delimineter == ":") {
             remove_char(token, ',');
-            if (strstr(token, settings_data->key) == 0) {
-                settings_data->value = token;
+            if (strstr(old_token, settings_data.key)) {
+                return token;
             }
-
-            token = strtok(NULL, ":");
         }
+        old_token = token;
+        token = strtok(NULL, delimineter);
     }
 
-    free(token);
-    token = NULL;
-
-    free(new_token);
-    new_token = NULL;
-
-    free(temp_file_str);
-    temp_file_str = NULL;
+    return NULL;
 }
 
-JsonObject* read_settings(void) {
+JsonObject* bind_settings(void) {
     char *full_path = malloc(BUFFER_SIZE * sizeof(char));
     char *file_str = malloc(BUFFER_SIZE * sizeof(char));
-    FILE *settings_file = fopen(full_path, "r");
     sprintf(full_path, "%s/%s", SETTINGS_FOLDER, SETTINGS_JSON_FILE);
+    FILE *settings_file = fopen(full_path, "r");
 
     while (fgets(file_str, (BUFFER_SIZE * sizeof(char)), settings_file)) {
-        remove_char(file_str, '{');
-        remove_char(file_str, '}');
-        remove_char(file_str, ' ');
-        remove_char(file_str, '"');
-        remove_char(file_str, '\n');
-        remove_char(file_str, '\\');
-        remove_char(file_str, '\t');
+        for (int i = 0; i < CHAR_ARRAY_SIZE; i++) {
+            remove_char(file_str, char_array[i]);
+        }
 
-        for (int i = 0; i < sizeof(settings) / sizeof(settings[0]); i++) {
-            if (strstr(file_str, settings[i].key)) {
-                settings[i].value = malloc(BUFFER_SIZE * sizeof(char));
-                get_settings_value(file_str, &settings[0]);
+        for (int i = 0; i < SETTINGS_SIZE; i++) {
+            if (strstr(file_str, temp_settings[i].key)) {
+                temp_settings[i].value = malloc(BUFFER_SIZE * sizeof(char));
+                temp_settings[i].value = get_settings_value(file_str, temp_settings[i]);
             }
         }
     }
 
-    return settings;
+    return temp_settings;
+}
+
+JsonObject *get_json_object_by_key(JsonObject *settings, char *key) {
+    for (int i = 0; i < SETTINGS_SIZE; i++) {
+        if (strstr(settings[i].key, key)) {
+            return &settings[i];
+        }
+    }
+
+    return NULL;
 }
