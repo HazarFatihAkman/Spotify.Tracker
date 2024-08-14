@@ -7,6 +7,9 @@
 
 #define BUFFER_SIZE 1024
 
+CURL *curl;
+CURLcode *c_codes;
+
 typedef struct Spotify_Api_Request {
     JsonObject client_id, client_secret, access_token;
 } Spotify_Api_Request;
@@ -22,8 +25,9 @@ extern const struct Spotify_App_Const {
     struct Spotify_Api_Response (*new)(void);
 } Spotify_App_Const;
 
-char *create_json_data(struct Spotify_Api_Response*);
+char* create_json_data(struct Spotify_Api_Response*);
 void get_authorization_token(JsonObject*, char*);
+int update_setting(JsonObject*, char*, char*);
 
 #define AUTHORIZATION_BEARER "Bearer %s"
 #define AUTHORIZATION_BASIC "Basic %s"
@@ -35,9 +39,7 @@ void get_authorization_token(JsonObject*, char*);
 #define SCOPE "user-read-currently-playing"
 
 /// AUTHORIZATION_GET
-#define AUTHORIZATION_URL "https://accounts.spotify.com/authorize?response_type=code&client_id=%s&scope=%s&redirect_uri=%s" //TODO: Refresh hourly
-#define AUTHORIZATION_RESPONSE "%s?code=%s&state=%d"
-#define AUTHORIZATION_ERROR_RESPONSE "%s?error=%s&state=%d"
+#define AUTHORIZATION_URL "https://accounts.spotify.com/authorize?response_type=code&client_id=%s&scope=%s&redirect_uri=%s"
 
 /// ACCESS_TOKEN_POST
 #define ACCESS_TOKEN_URL "https://accounts.spotify.com/api/token"

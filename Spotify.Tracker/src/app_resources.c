@@ -12,53 +12,16 @@ JsonObject temp_settings[SETTINGS_SIZE] = {
     {AUTHORIZATION_CODE, NULL}
 };
 
-int create_folder(char *folder_path) {
-    DIR *dir = opendir(folder_path);
-
-    if (dir) {
-        PRINT_FOLDER_EXISTS(folder_path);
-        closedir(dir);
-        return 0;
-    }
-    else if (ENOENT == errno) {
-        int status = mkdir(folder_path, 0700);
-        PRINT_FOLDER_CREATED(folder_path);
-        return status;
-    }
-
-    return -1;
-}
-
-int create_file(char *folder_path, char *file_path) {
-    char *full_path = malloc(BUFFER_SIZE * sizeof(char));
-    sprintf(full_path, "%s/%s", folder_path, file_path);
-    FILE *file = fopen(full_path, "r");
-
-    if (file) {
-        PRINT_FILE_EXISTS(full_path);
-        free(full_path);
-        fclose(file);
-        return 1;
-    }
-    else {
-        fclose(file);
-
-        file = fopen(full_path, "w");
-        fprintf(file, SETTINGS_JSON_DATA);
-        fclose(file);
-
-        PRINT_FILE_CREATED(full_path);
-        free(full_path);
-        return  1;
-    }
-}
-
 int create_sources(void) {
     if (create_folder(SETTINGS_FOLDER) == 0) {
-        if (create_file(SETTINGS_FOLDER, SETTINGS_JSON_FILE) == -1) {
+        char *json_data = malloc(BUFFER_SIZE * sizeof(char));
+        sprintf(json_data, SETTINGS_JSON_CONTENT, "", "", "", "", "", "", "");
+        if (create_file_with_content(SETTINGS_FOLDER, SETTINGS_JSON_FILE, SETTINGS_JSON_CONTENT) == -1) {
             PRINT_ERROR(SETTINGS_JSON_FILE);
             exit(EXIT_FAILURE);
         }
+        free(json_data);
+        json_data = NULL;
     }
     else {
         PRINT_ERROR(SETTINGS_FOLDER);
@@ -75,24 +38,14 @@ int create_sources(void) {
         PRINT_ERROR(SPOTIFY_HTML_FOLDER);
         exit(EXIT_FAILURE);
     }
-
     return 1;
 }
 
-void remove_char(char *str, char remove_char) {
-    int i, j = 0;
-    for (i = 0; i <= strlen(str); i++) {
-        if (str[i] != remove_char) {
-            str[j++] = str[i];
-        }
-    }
-}
 
 char* get_settings_value(char *str, struct JsonObject settings_data) {
     char *temp_str = malloc(BUFFER_SIZE * sizeof(char)),
          *token = malloc(BUFFER_SIZE * sizeof(char)),
-         *old_token = malloc(BUFFER_SIZE * sizeof(char)),
-         *response = malloc(BUFFER_SIZE * sizeof(char));
+         *old_token = malloc(BUFFER_SIZE * sizeof(char));
 
     strcpy(temp_str, str);
 
@@ -100,12 +53,12 @@ char* get_settings_value(char *str, struct JsonObject settings_data) {
     token = strtok(temp_str, delimineter);
 
     while (token != NULL && token[0] != ' ') {
-        if (delimineter == ",") {
+        if (strcmp(delimineter, ",") == 0) {
             if (strstr(token, settings_data.key)) {
                 return get_settings_value(token, settings_data);
             }
         }
-        else if (delimineter == ":") {
+        else if (strcmp(delimineter, ":") == 0) {
             remove_char(token, ',');
             if (strstr(old_token, settings_data.key)) {
                 return token;
@@ -121,6 +74,7 @@ char* get_settings_value(char *str, struct JsonObject settings_data) {
 JsonObject* bind_settings(void) {
     char *full_path = malloc(BUFFER_SIZE * sizeof(char));
     char *file_str = malloc(BUFFER_SIZE * sizeof(char));
+
     sprintf(full_path, "%s/%s", SETTINGS_FOLDER, SETTINGS_JSON_FILE);
     FILE *settings_file = fopen(full_path, "r");
 

@@ -5,22 +5,23 @@
 void exit_resource_null(JsonObject *settings);
 
 int main(void) {
-    printf("hello world");
     create_sources();
     JsonObject* settings = bind_settings();
     exit_resource_null(settings);
 
     struct Server server = Server_Const.new();
     init_server(&server);
-    printf("%d\n",server.server_sock);
 
     char *redirect_uri = malloc(BUFFER_SIZE * sizeof(char));
-    sprintf(redirect_uri, LOCALHOST, PORT);
-
+    sprintf(redirect_uri, LOCALHOST_API_PATH, PORT, AUTHORIZATION_CODE_ENDPOINT);
     get_authorization_token(settings, redirect_uri);
+
+    while (1) {
+        handle_client(&server);
+    }
+
     free(redirect_uri);
     redirect_uri = NULL;
-    shutdown(server.server_sock, SHUT_RDWR);
 }
 
 void exit_resource_null(JsonObject *settings) {
