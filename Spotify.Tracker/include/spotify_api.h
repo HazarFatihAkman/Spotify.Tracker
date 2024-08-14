@@ -25,17 +25,18 @@ extern const struct Spotify_App_Const {
     struct Spotify_Api_Response (*new)(void);
 } Spotify_App_Const;
 
-char* create_json_data(struct Spotify_Api_Response*);
+char* create_json_data(Spotify_Api_Response*); //TODO : maybe
 void get_authorization_token(JsonObject*, char*);
-int update_setting(JsonObject*, char*, char*);
+void get_access_token(JsonObject*);
+int update_setting(JsonObject*);
 
 #define AUTHORIZATION_BEARER "Bearer %s"
 #define AUTHORIZATION_BASIC "Basic %s"
-#define ACCESS_TOKEN_GRANT_TYPE "access_token"
+#define ACCESS_TOKEN_GRANT_TYPE "client_credentials"
 #define REFRESH_TOKEN_GRANT_TYPE "refresh_token"
 
 ///CONTENTS
-#define CONTENT_TYPE "application/x-www-form-urlencoded"
+#define FORM_CONTENT_TYPE "Content-Type: application/x-www-form-urlencoded"
 #define SCOPE "user-read-currently-playing"
 
 /// AUTHORIZATION_GET

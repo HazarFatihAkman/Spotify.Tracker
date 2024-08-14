@@ -2,7 +2,7 @@
 
 void remove_char(char *str, char remove_char) {
     int i, j = 0;
-    for (i = 0; i < strlen(str) - 1; i++) {
+    for (i = 0; i <= strlen(str); i++) {
         if (str[i] != remove_char) {
             str[j++] = str[i];
         }
@@ -13,7 +13,7 @@ void remove_str(char* str, char *remove_str) {
     char *response_str = malloc(BUFFER_SIZE * sizeof(char));
     int i, j, k = 0, x = 0;
 
-    for (i = 0; i < strlen(str) - 1; i++) {
+    for (i = 0; i <= strlen(str); i++) {
         if (str[i] == remove_str[0] && str[i + 1] == remove_str[1]) {
             x = i;
             for (j = 0; j < strlen(remove_str) - 1; j++) {

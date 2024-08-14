@@ -1,6 +1,6 @@
 #include "../include/app_resources.h"
 
-const char char_array[CHAR_ARRAY_SIZE] = { '{', '}', '"', '\n', '\\', '\t', '\"', ' ' };
+const char char_array[CHAR_ARRAY_SIZE] = { '{', '}', '"', '\n', '\\', '\t', '\"', ' ', '\v', '\f', '\r' };
 
 JsonObject temp_settings[SETTINGS_SIZE] = {
     {CLIENT_ID, NULL},
@@ -14,14 +14,10 @@ JsonObject temp_settings[SETTINGS_SIZE] = {
 
 int create_sources(void) {
     if (create_folder(SETTINGS_FOLDER) == 0) {
-        char *json_data = malloc(BUFFER_SIZE * sizeof(char));
-        sprintf(json_data, SETTINGS_JSON_CONTENT, "", "", "", "", "", "", "");
         if (create_file_with_content(SETTINGS_FOLDER, SETTINGS_JSON_FILE, SETTINGS_JSON_CONTENT) == -1) {
             PRINT_ERROR(SETTINGS_JSON_FILE);
             exit(EXIT_FAILURE);
         }
-        free(json_data);
-        json_data = NULL;
     }
     else {
         PRINT_ERROR(SETTINGS_FOLDER);
@@ -41,7 +37,6 @@ int create_sources(void) {
     return 1;
 }
 
-
 char* get_settings_value(char *str, struct JsonObject settings_data) {
     char *temp_str = malloc(BUFFER_SIZE * sizeof(char)),
          *token = malloc(BUFFER_SIZE * sizeof(char)),
@@ -59,8 +54,8 @@ char* get_settings_value(char *str, struct JsonObject settings_data) {
             }
         }
         else if (strcmp(delimineter, ":") == 0) {
-            remove_char(token, ',');
             if (strstr(old_token, settings_data.key)) {
+                remove_char(token, ',');
                 return token;
             }
         }
@@ -91,10 +86,12 @@ JsonObject* bind_settings(void) {
         }
     }
 
+    fclose(settings_file);
+
     return temp_settings;
 }
 
-JsonObject *get_json_object_by_key(JsonObject *settings, char *key) {
+JsonObject* get_json_object_by_key(JsonObject *settings, char *key) {
     for (int i = 0; i < SETTINGS_SIZE; i++) {
         if (strstr(settings[i].key, key)) {
             return &settings[i];
@@ -102,4 +99,52 @@ JsonObject *get_json_object_by_key(JsonObject *settings, char *key) {
     }
 
     return NULL;
+}
+
+void to_json(char *temp_str, JsonObject setting, char *format_null, char *format_not_null) {
+    if (setting.value == NULL) {
+        sprintf(temp_str, format_null, setting.key);
+    }
+    else {
+        sprintf(temp_str, format_not_null, setting.key, setting.value);
+    }
+}
+
+char* settings_to_json(JsonObject *settings) {
+    char *temp_str = malloc(BUFFER_SIZE * sizeof(char));
+    char *out = malloc(BUFFER_SIZE * sizeof(char));
+    for (int i = 0; i < SETTINGS_SIZE; i++) {
+        if (i == 0) {
+            to_json(temp_str, settings[i], "{\n\t\"%s\" : \"\",\n\t", "{\n\t\"%s\" : \"%s\",\n\t");
+        }
+        else if (i == (SETTINGS_SIZE - 1)) {
+            to_json(temp_str, settings[i], "\"%s\" : \"\"\n}", "\"%s\" : \"%s\"\n}");
+        }
+        else {
+            to_json(temp_str, settings[i], "\"%s\" : \"\",\n\t", "\"%s\" : \"%s\",\n\t");
+        }
+        strcat(out, temp_str);
+    }
+    free(temp_str);
+    temp_str = NULL;
+
+    return out;
+}
+
+void exit_resource_null(JsonObject *settings) {
+    JsonObject* client_id = get_json_object_by_key(settings, CLIENT_ID);
+    if (client_id->value == NULL) {
+        printf("%s\n", CLIENT_ID_NULL);
+        exit(1);
+    }
+    free(client_id);
+    client_id = NULL;
+
+    JsonObject* client_secret = get_json_object_by_key(settings, CLIENT_SECRET);
+    if (client_secret->value == NULL) {
+        printf("%s\n", CLIENT_SECRET_NULL);
+        exit(1);
+    }
+    free(client_secret);
+    client_secret = NULL; 
 }

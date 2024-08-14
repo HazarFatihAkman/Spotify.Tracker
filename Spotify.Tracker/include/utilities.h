@@ -31,6 +31,7 @@ int create_file_with_content(char*, char*, char*);
 #define PRINT_FILE_CREATED(FILE_NAME) printf(APP_RESOURCES_INFO_MESSAGE, FILE_NAME, "file created.");
 #define PRINT_FILE_EXISTS(FILE_NAME) printf(APP_RESOURCES_INFO_MESSAGE, FILE_NAME, "file exists.");
 #define PRINT_ERROR(ERROR_SOURCE) printf(APP_RESOURCES_INFO_MESSAGE, ERROR_SOURCE, "error.");
+#define PRINT_MISSING_SETTINGS(SETTINGS_KEY) printf(APP_RESOURCES_INFO_MESSAGE, SETTINGS_KEY, "missing");
 #define PRINT_SETTINGS(SETTINGS) printf("%s : %s\n", SETTINGS.key, SETTINGS.value);
 
 //SYSTEM

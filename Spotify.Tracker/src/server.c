@@ -1,13 +1,19 @@
 #include "../include/server.h"
 
-void handle_authorization_code(char*);
-void remove_url(char*, char*);
-
-static struct Server new(void) {
-    return (struct Server) { };
+static Server new(void) {
+    return (Server) { };
 }
 
 const struct Server_Const Server_Const = { .new = &new };
+
+static Client_Handler new_client_handler(Server *server, JsonObject *settings) {
+    return (Client_Handler) {
+        .server = server,
+        .settings = settings
+    };
+}
+
+const struct Client_Handler_Const Client_Handler_Const = { .new = &new_client_handler };
 
 void init_server(struct Server *server) {
     struct sockaddr_in server_addr;
@@ -32,27 +38,43 @@ void init_server(struct Server *server) {
     PRINT_SUCCESS("listen()");
 }
 
-void handle_client(struct Server *server)
-{
-    char *data = malloc(BUFFER_SIZE * sizeof(char));
-    server->client_sock = accept(server->server_sock, NULL, NULL);
-
-    read(server->client_sock, data, BUFFER_SIZE * sizeof(char));
-    handle_get_requests(data);
-    shutdown(server->client_sock, SHUT_RDWR);
-}
-
-void handle_get_requests(char *data) {
-    if (strstr(data, "GET")) {
-        handle_authorization_code(data);
-    }
-}
-
-void handle_authorization_code(char *data) {
+void handle_authorization_code(char *data, JsonObject *settings, int client_sock) {
     if (strstr(data , AUTHORIZATION_CODE_PREFIX)) {
-        data = find_str(data, AUTHORIZATION_CODE_PREFIX, " ");
-        remove_str(data, AUTHORIZATION_CODE_PREFIX);
-        
-        printf("%s\n", data);
+        JsonObject* authorization_token = get_json_object_by_key(settings, AUTHORIZATION_CODE);
+        if (authorization_token != NULL) {
+            data = find_str(data, AUTHORIZATION_CODE_PREFIX, " ");
+            remove_str(data, AUTHORIZATION_CODE_PREFIX);
+            authorization_token->value = data;
+            update_setting(settings);
+            char *response = malloc(BUFFER_SIZE * sizeof(char));
+            sprintf(response, GET_HTML, AUTHORIZATION_SUCCESS_HTML);
+            send(client_sock, response, strlen(response), 0);
+        }
+        else {
+            PRINT_MISSING_SETTINGS(AUTHORIZATION_CODE);
+        }
     }
+}
+
+void handle_get_requests(char *data, JsonObject *settings, int client_sock) {
+    if (strstr(data, "GET")) {
+        handle_authorization_code(data, settings, client_sock);
+    }
+}
+
+void* handle_client(void *args)
+{
+    Client_Handler* client_handler = (Client_Handler*)args;
+    while (1) {
+        char *data = malloc(BUFFER_SIZE * sizeof(char));
+        client_handler->server->client_sock = accept(client_handler->server->server_sock, NULL, NULL);
+
+        read(client_handler->server->client_sock, data, BUFFER_SIZE * sizeof(char));
+        handle_get_requests(data, client_handler->settings, client_handler->server->client_sock);
+        shutdown(client_handler->server->client_sock, SHUT_RDWR);
+    }
+}
+
+void init_jobs(Server *server) {
+
 }

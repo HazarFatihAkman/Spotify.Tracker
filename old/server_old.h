@@ -37,4 +37,3 @@ extern const struct ServerConst {
 #define SERVER_APP_INFO "[Server Info] : Message Send successful. client : %d, server : %d\n-------------------------------------------------\n"
 
 #endif /* server_h */
-*/
