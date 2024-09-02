@@ -9,36 +9,46 @@
 #define PORT 3131
 #define LOCALHOST "http://localhost:%d"
 #define LOCALHOST_API_PATH "http://localhost:%d%s"
+#define SERVER_CHAR_ARRAY_SIZE 11
 
-typedef struct Server {
+typedef struct Server_Sock {
     int client_sock, server_sock;
 } Server;
 
 extern const struct Server_Const {
-    struct Server (*new)(void);
+    Server* (*new)(void);
 } Server_Const;
 
-typedef struct Client_Handler
+typedef struct ServerInfo
 {
-    Server *server;
-    JsonObject *settings;
-} Client_Handler;
+    Server* server;
+    Json_Object settings[SETTINGS_SIZE];
+} Server_Info;
 
-extern const struct Client_Handler_Const {
-    struct Client_Handler (*new)(struct Server*, struct JsonObject*);
-} Client_Handler_Const;
+extern const struct Server_Info_Const {
+    Server_Info (*new)(void);
+} Server_Info_Const;
+
+typedef struct ThreadArgs
+{
+    char *data;
+    Server_Info *server_info;
+} Thread_Args;
+
 
 void init_server(Server*);
-void* init_jobs(void*); //TODO: refresh token hourly
-void* handle_client(void*);
+void init_jobs(Server_Info*);
+void* handle_requests(void*);
+int handle_authorization_code(Server_Info*);
+void handle_access_token(Server_Info*);
 
 //INFO
+#define INFO_TRACKING() printf("[Info - App] : Tracking Spotify.\n-------------------------------------------------\n")
 #define PRINT_SUCCESS(STR) printf("[Info] : %s is successful.\n", STR);
 
 //ENDPOINTS
 /// GET_CURRENT_TRACK
-#define GET_CURRENT_TRACK "%s/current-track"
-#define GET_CURRENT_TRACK_RESPONSE "{ \"track\":{} }"
+#define GET_CURRENT_TRACK "/api/current-track"
 
 /// CALLBACK
 #define AUTHORIZATION_CODE_ENDPOINT "/api/authorization-code"

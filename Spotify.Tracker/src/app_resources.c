@@ -2,11 +2,11 @@
 
 const char char_array[CHAR_ARRAY_SIZE] = { '{', '}', '"', '\n', '\\', '\t', '\"', ' ', '\v', '\f', '\r' };
 
-JsonObject temp_settings[SETTINGS_SIZE] = {
+Json_Object temp_settings[SETTINGS_SIZE] = {
     {CLIENT_ID, NULL},
     {CLIENT_SECRET, NULL},
     {ACCESS_TOKEN, NULL},
-    {EXPIRE_IN, NULL},
+    {EXPIRES_IN, NULL},
     {REFRESH_TOKEN, NULL},
     {TOKEN_TYPE, NULL},
     {AUTHORIZATION_CODE, NULL}
@@ -37,7 +37,11 @@ int create_sources(void) {
     return 1;
 }
 
-char* get_settings_value(char *str, struct JsonObject settings_data) {
+char* get_settings_value(char *str, char* key) {
+    for (int i = 0; i < CHAR_ARRAY_SIZE; i++) {
+        remove_char(str, char_array[i]);
+    }
+
     char *temp_str = malloc(BUFFER_SIZE * sizeof(char)),
          *token = malloc(BUFFER_SIZE * sizeof(char)),
          *old_token = malloc(BUFFER_SIZE * sizeof(char));
@@ -49,24 +53,32 @@ char* get_settings_value(char *str, struct JsonObject settings_data) {
 
     while (token != NULL && token[0] != ' ') {
         if (strcmp(delimineter, ",") == 0) {
-            if (strstr(token, settings_data.key)) {
-                return get_settings_value(token, settings_data);
+            if (strstr(token, key)) {
+                return get_settings_value(token, key);
             }
         }
         else if (strcmp(delimineter, ":") == 0) {
-            if (strstr(old_token, settings_data.key)) {
+            if (strstr(old_token, key)) {
                 remove_char(token, ',');
                 return token;
             }
         }
-        old_token = token;
+
+        strcpy(old_token, token);
         token = strtok(NULL, delimineter);
     }
+    free(token);
+    token = NULL;
 
+    free(temp_str);
+    temp_str = NULL;
+
+    free(old_token);
+    old_token = NULL;
     return NULL;
 }
 
-JsonObject* bind_settings(void) {
+void bind_settings(Json_Object *settings) {
     char *full_path = malloc(BUFFER_SIZE * sizeof(char));
     char *file_str = malloc(BUFFER_SIZE * sizeof(char));
 
@@ -74,34 +86,33 @@ JsonObject* bind_settings(void) {
     FILE *settings_file = fopen(full_path, "r");
 
     while (fgets(file_str, (BUFFER_SIZE * sizeof(char)), settings_file)) {
-        for (int i = 0; i < CHAR_ARRAY_SIZE; i++) {
-            remove_char(file_str, char_array[i]);
-        }
-
         for (int i = 0; i < SETTINGS_SIZE; i++) {
-            if (strstr(file_str, temp_settings[i].key)) {
-                temp_settings[i].value = malloc(BUFFER_SIZE * sizeof(char));
-                temp_settings[i].value = get_settings_value(file_str, temp_settings[i]);
+            settings[i].key = temp_settings[i].key;
+            if (strstr(file_str, settings[i].key)) {
+                settings[i].value = malloc(BUFFER_SIZE * sizeof(char));
+                settings[i].value = get_settings_value(file_str, settings[i].key);
             }
         }
     }
 
     fclose(settings_file);
+    free(full_path);
+    full_path = NULL;
 
-    return temp_settings;
+    free(file_str);
+    file_str = NULL;
 }
 
-JsonObject* get_json_object_by_key(JsonObject *settings, char *key) {
+Json_Object* get_json_object_by_key(Json_Object settings[SETTINGS_SIZE], char *key) {
     for (int i = 0; i < SETTINGS_SIZE; i++) {
         if (strstr(settings[i].key, key)) {
             return &settings[i];
         }
     }
-
     return NULL;
 }
 
-void to_json(char *temp_str, JsonObject setting, char *format_null, char *format_not_null) {
+void to_json(char *temp_str, Json_Object setting, char *format_null, char *format_not_null) {
     if (setting.value == NULL) {
         sprintf(temp_str, format_null, setting.key);
     }
@@ -110,7 +121,7 @@ void to_json(char *temp_str, JsonObject setting, char *format_null, char *format
     }
 }
 
-char* settings_to_json(JsonObject *settings) {
+char* settings_to_json(Json_Object settings[SETTINGS_SIZE]) {
     char *temp_str = malloc(BUFFER_SIZE * sizeof(char));
     char *out = malloc(BUFFER_SIZE * sizeof(char));
     for (int i = 0; i < SETTINGS_SIZE; i++) {
@@ -127,24 +138,68 @@ char* settings_to_json(JsonObject *settings) {
     }
     free(temp_str);
     temp_str = NULL;
-
     return out;
 }
 
-void exit_resource_null(JsonObject *settings) {
-    JsonObject* client_id = get_json_object_by_key(settings, CLIENT_ID);
-    if (client_id->value == NULL) {
+void exit_resource_null(Json_Object *settings) {
+    Json_Object client_id = *get_json_object_by_key(settings, CLIENT_ID);
+    if (client_id.value == NULL) {
         printf("%s\n", CLIENT_ID_NULL);
         exit(1);
     }
-    free(client_id);
-    client_id = NULL;
 
-    JsonObject* client_secret = get_json_object_by_key(settings, CLIENT_SECRET);
-    if (client_secret->value == NULL) {
+    Json_Object client_secret = *get_json_object_by_key(settings, CLIENT_SECRET);
+    if (client_secret.value == NULL) {
         printf("%s\n", CLIENT_SECRET_NULL);
         exit(1);
     }
-    free(client_secret);
-    client_secret = NULL; 
+}
+
+int is_api_credentials_null(Json_Object *settings) {
+    Json_Object *authorization_token = get_json_object_by_key(settings, AUTHORIZATION_CODE);
+    if (authorization_token == NULL) {
+        PRINT_MISSING_SETTINGS(AUTHORIZATION_CODE);
+        exit(1);
+    }
+    else if (authorization_token->value == NULL) {
+        return 1;
+    }
+
+    Json_Object *access_token = get_json_object_by_key(settings, ACCESS_TOKEN);
+    if (access_token == NULL) {
+        PRINT_MISSING_SETTINGS(ACCESS_TOKEN);
+        exit(1);
+    }
+    else if (access_token->value == NULL) {
+        return 1;
+    }
+
+    Json_Object *refresh_token = get_json_object_by_key(settings, REFRESH_TOKEN);
+    if (refresh_token == NULL) {
+        PRINT_MISSING_SETTINGS(REFRESH_TOKEN);
+        exit(1);
+    }
+    else if (refresh_token->value == NULL) {
+        return 1;
+    }
+
+    Json_Object *expire_in = get_json_object_by_key(settings, EXPIRES_IN);
+    if (expire_in == NULL) {
+        PRINT_MISSING_SETTINGS(REFRESH_TOKEN);
+        exit(1);
+    }
+    else if (expire_in->value == NULL) {
+        return 1;
+    }
+
+    Json_Object *token_type = get_json_object_by_key(settings, TOKEN_TYPE);
+    if (token_type == NULL) {
+        PRINT_MISSING_SETTINGS(TOKEN_TYPE);
+        exit(1);
+    }
+    else if (token_type->value == NULL) {
+        return 1;
+    }
+
+    return 0;
 }
