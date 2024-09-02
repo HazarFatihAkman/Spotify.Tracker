@@ -1,7 +1,7 @@
 # Xcode
 .DS_Store
 build/
-old/
+old_version/
 DerivedData/
 *.pbxuser
 !default.pbxuser
