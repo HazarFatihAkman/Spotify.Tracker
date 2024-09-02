@@ -1,4 +1,6 @@
-# Spotify.Tracker (That's not officall, that's a personal use only project)
+# Spotify.Tracker 
+
+> That's not officall, that's a personal use only project.
 
 ### What's Coming?
 - [x] Use spotify api instead of cmd
