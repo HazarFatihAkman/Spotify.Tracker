@@ -1,36 +1,63 @@
-//
-//  server.h
-//  Spotify.Tracker
-//
-//  Created by Hazar Fatih Akman on 10.07.2024.
-//
-
 #ifndef server_h
 #define server_h
 
-#include "spotify_application.h"
-#include <unistd.h>
+#include "spotify_api.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <pthread.h>
 
-typedef struct Server {
-    int server_socket, client_socket;
-    struct SpotifyApp spotify_app;
+#define PORT 3131
+#define LOCALHOST "http://localhost:%d"
+#define LOCALHOST_API_PATH "http://localhost:%d%s"
+#define SERVER_CHAR_ARRAY_SIZE 11
+
+typedef struct Server_Sock {
+    int client_sock, server_sock;
 } Server;
 
-extern const struct ServerConst {
-    struct Server (*new)(void);
-    void (*start_server)(struct Server*);
-    void (*launch)(struct Server);
-} ServerConst;
+extern const struct Server_Const {
+    Server* (*new)(void);
+} Server_Const;
 
-#define INFO_TRACKING "[Info - App] : Tracking Spotify.\n-------------------------------------------------\n"
-#define INFO_SPOTIYF_RUNNING "[Info - Spotify] : Spotify's running.\n-------------------------------------------------\n"
-#define INFO_SPOTIYF_PID_HAS_BEEN_CHANGED "[Info - Spotify] : Spotify's been changed.\n-------------------------------------------------\n"
-#define INFO_SPOTIYF_CLOSED "[Info - Spotify] : Spotify's closed.\n-------------------------------------------------\n"
-#define INFO_CURRENT_TRACK "[Info - Current Track] : %s by %s - %s\n-------------------------------------------------\n"
-#define INFO_CURRENT_TRACK_IMAGE "[Info - Current Track/Image] : %s\n-------------------------------------------------\n"
-#define INFO_CURRENT_TRACK_NOT_FOUND "[Info - Current Track] : Current track not found.\n-------------------------------------------------\n"
-#define ERROR_CREATE_THREAD "[Info - App] : Error creating thread\n-------------------------------------------------\n"
-#define INFO_APP_TIME "[Info - App Time] : Passed - %d\n-------------------------------------------------\n"
+typedef struct ServerInfo
+{
+    Server* server;
+    Json_Object settings[SETTINGS_SIZE];
+} Server_Info;
+
+extern const struct Server_Info_Const {
+    Server_Info (*new)(void);
+} Server_Info_Const;
+
+typedef struct ThreadArgs
+{
+    char *data;
+    Server_Info *server_info;
+} Thread_Args;
+
+
+void init_server(Server*);
+void init_jobs(Server_Info*);
+void* handle_requests(void*);
+int handle_authorization_code(Server_Info*);
+void handle_access_token(Server_Info*);
+
+//INFO
+#define INFO_TRACKING() printf("[Info - App] : Tracking Spotify.\n-------------------------------------------------\n")
+#define PRINT_SUCCESS(STR) printf("[Info] : %s is successful.\n", STR);
+
+//ENDPOINTS
+/// GET_CURRENT_TRACK
+#define GET_CURRENT_TRACK "/api/current-track"
+
+/// CALLBACK
+#define AUTHORIZATION_CODE_ENDPOINT "/api/authorization-code"
+#define AUTHORIZATION_CODE_PREFIX "/api/authorization-code?code="
+
+//REQUEST_RESPONSE_TYPES
+#define GET_HTML "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET\r\nAccess-Control-Allow-Headers: Content-Type\r\nConnection: close\r\n\r\n%s"
+
+//HTML
+#define AUTHORIZATION_SUCCESS_HTML "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Authorization Confirmed</title><style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#f0f8ff;font-family:Arial,sans-serif}.message{padding:20px;border:2px solid #4caf50;border-radius:10px;background-color:#ffffff;box-shadow:0 4px 8px rgba(0,0,0,0.2)}</style><script>setTimeout(()=>window.close(),3000);</script></head><body><div class=\"message\">Confirmed your authorization</div></body></html>"
 
 #endif /* server_h */
