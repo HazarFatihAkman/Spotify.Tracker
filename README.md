@@ -6,7 +6,7 @@
 - [x] Use spotify api instead of cmd
 - [x] Spotify_app requests/responses
 - [x] Server_side recieve requests/send responses
-- [ ] Fixing memory leaks and bugs
+- [x] Fixing memory leaks and bugs
 
 ### NOTE
 Pls, create an issue if there's any bugs.
