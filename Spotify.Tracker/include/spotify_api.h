@@ -18,14 +18,12 @@ struct SpotifyChunk
 // RESPONSE_JSON
 #define RESPONSE_JSON "{\n\t\"name\": %s,\n\t\"artist\": %s,\n\t\"image_src\":%s\n}"
 
-char* create_json_data(char*, char*, char*);
+void get_authorization_token(char*);
+char* get_access_token(char*);
+char* refresh_token(void);
+char* get_current_playing(void);
 
-void get_authorization_token(Json_Object[SETTINGS_SIZE], char*);
-char* get_access_token(Json_Object[SETTINGS_SIZE], char*);
-char* refresh_token(Json_Object[SETTINGS_SIZE]);
-char* get_current_playing(Json_Object[SETTINGS_SIZE]);
-
-int update_setting(Json_Object[SETTINGS_SIZE]);
+int update_setting(void);
 
 ///AUTHORIZATIONS
 #define AUTHORIZATION_BASIC "Authorization:Basic %s"

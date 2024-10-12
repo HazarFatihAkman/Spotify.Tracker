@@ -10,11 +10,14 @@ typedef struct JsonObject {
     char *key, *value;
 } Json_Object;
 
+//GLOBAL
+Json_Object app_settings[SETTINGS_SIZE];
+
 //FILES
 int create_sources(void);
 
 //JsonObjects
-void bind_settings(Json_Object*);
+int bind_settings(void);
 Json_Object* get_json_object_by_key(Json_Object[SETTINGS_SIZE], char*);
 char* get_settings_value(char*, char*);
 char* settings_to_json(Json_Object[SETTINGS_SIZE]);

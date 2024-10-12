@@ -1,6 +1,9 @@
 # Xcode
 .DS_Store
 build/
+test/
+test/main.c
+test/test_build/
 old_version/
 DerivedData/
 *.pbxuser

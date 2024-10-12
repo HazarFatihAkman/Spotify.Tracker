@@ -17,15 +17,6 @@ static Server* new(void) {
 
 const struct Server_Const Server_Const = { .new = &new };
 
-static Server_Info new_client_handler(void) {
-    return (Server_Info) {
-        .server = Server_Const.new(),
-        .settings = {}
-    };
-}
-
-const struct Server_Info_Const Server_Info_Const = { .new = &new_client_handler };
-
 void init_server(Server *server) {
     struct sockaddr_in server_addr;
     server->server_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -48,29 +39,41 @@ void init_server(Server *server) {
     PRINT_SUCCESS("listen()");
 }
 
-int handle_authorization_code(Server_Info *server_info) {
-    Json_Object *authorization_token = get_json_object_by_key(server_info->settings, AUTHORIZATION_CODE);
+int handle_authorization_code(Server *server) {
+    Json_Object *authorization_token = get_json_object_by_key(app_settings, AUTHORIZATION_CODE);
     if (authorization_token != NULL) {
+        char *content = malloc(BUFFER_SIZE * sizeof(char));
         char *data = malloc(BUFFER_SIZE * sizeof(char));
-        server_info->server->client_sock = accept(server_info->server->server_sock, NULL, NULL);
-        read(server_info->server->client_sock, data, BUFFER_SIZE * sizeof(char));
 
-        data = get_str_between(data, AUTHORIZATION_CODE_PREFIX, " ");
-        authorization_token->value = data;
-        update_setting(server_info->settings);
+        server->client_sock = accept(server->server_sock, NULL, NULL);
+        read(server->client_sock, data, BUFFER_SIZE * sizeof(char));
+
+        if (data[0] == '\0' || data == NULL) {
+            shutdown(server->client_sock, SHUT_RDWR);
+            return 0;
+        }
+
+        find_str(content, data, AUTHORIZATION_CODE_PREFIX, " ");
+        trim(content);
+        remove_str(content, AUTHORIZATION_CODE_PREFIX);
+
+        authorization_token->value = content;
+        update_setting();
+        bind_settings();
 
         char *response = malloc(BUFFER_SIZE * sizeof(char));
-        sprintf(response, GET_HTML, AUTHORIZATION_SUCCESS_HTML);
-        send(server_info->server->client_sock, response, strlen(response), 0);
+        snprintf(response, BUFFER_SIZE * sizeof(char) + strlen(AUTHORIZATION_SUCCESS_HTML), OK, AUTHORIZATION_SUCCESS_HTML);
+        send(server->client_sock, response, strlen(response), 0);
+        free(response);
     }
     else {
         PRINT_MISSING_SETTINGS(AUTHORIZATION_CODE);
         exit(1);
     }
 
-    shutdown(server_info->server->client_sock, SHUT_RDWR);
+    shutdown(server->client_sock, SHUT_RDWR);
     if(authorization_token != NULL && authorization_token->value == NULL) {
-        exit(1);    
+        exit(1);
     }
 
     sleep(3);
@@ -78,117 +81,106 @@ int handle_authorization_code(Server_Info *server_info) {
 }
 
 void handle_get_requests(Thread_Args thread_args) {
-    if (strstr(thread_args.data, GET_CURRENT_TRACK)) {
-        INFO_TRACKING();
-        char *response = malloc(BUFFER_SIZE * sizeof(char));
-        response = get_current_playing(thread_args.server_info->settings);
-        if (response[0] == '\0') {
-            printf("Pls, open and play a song on spotify.\n");
-            return;
-        }
-
-        char *response_json = malloc(BUFFER_SIZE * sizeof(char)),
-             *get_response = malloc(BUFFER_SIZE * sizeof(char));
-
-        char *track_data = get_str_between(response, "\"is_local\" :", "\"popularity");
-        PRINT_SUCCESS("track_data");
-        //printf("track_data :%s\n", track_data);
-
-        char *track_name = get_str_between(track_data, "\"name\" :", ",\n");
-        PRINT_SUCCESS("track_name");
-        trim(track_name);
-        // printf("track_name : %s\n", track_name);
-
-        char *artist_data = get_str_between(response, "\"artists\" : [ {", "],");
-        PRINT_SUCCESS("artist_data");
-        // printf("artist_data :%s\n", artist_data);
-
-        char *artist_name = get_str_between(artist_data, "\"name\"", ",\n");
-        PRINT_SUCCESS("artist_name");
-        remove_char(artist_name, ':');
-        trim(artist_name);
-        // printf("artist_name : %s\n", artist_name);
-
-        char *image_data = get_str_between(response, "\"images\" : [ {", "\"width\"");
-        PRINT_SUCCESS("image_data");
-        // printf("image_data :%s\n", image_data);
-
-        char *image_src = get_str_between(image_data, "\"url\" :", ",\n");
-        PRINT_SUCCESS("image_src");
-        trim(image_src);
-        //printf("image_src : %s\n", image_src);
-
-        sprintf(response_json, RESPONSE_JSON, track_name, artist_name, image_src);
-        printf("%s\n", response_json);
-        
-        sprintf(get_response, GET_RESPONSE, response_json);
-
-        free(response);
-        response = NULL;
-
-        free(response_json);
-        response_json = NULL;
-
-        free(track_data);
-        track_data = NULL;
-
-        free(artist_data);
-        artist_data = NULL;
-
-        free(artist_name);
-        artist_name = NULL;
-
-        free(image_data);
-        image_data = NULL;
-
-        free(image_src);
-        image_src = NULL;
-
-        if (send(thread_args.server_info->server->client_sock, get_response, strlen(get_response), 0) < 0) {
-            free(get_response);
-            get_response = NULL;
-
-            PRINT_ERROR("send()");
-            exit(1);
-        }
-        else {
-            free(get_response);
-            get_response = NULL;
-
-            PRINT_SUCCESS("send()");
-        }
+    if ((thread_args.data == NULL && thread_args.data[0] == '\0') || !strstr(thread_args.data, GET_CURRENT_TRACK)) {
+        return;
     }
+
+    INFO_TRACKING();
+    char *response = get_current_playing();
+
+    if (response[0] == '\0') {
+        printf("Pls, open and play a song on spotify.\n");
+        return;
+    }
+
+    char *response_json = malloc(BUFFER_SIZE * sizeof(char)),
+         *get_response = malloc(BUFFER_SIZE * sizeof(char)),
+         *track_data = malloc(BUFFER_SIZE * sizeof(char)),
+         *track_name = malloc(BUFFER_SIZE * sizeof(char)),
+         *artist_data = malloc(BUFFER_SIZE * sizeof(char)),
+         *artist_name = malloc(BUFFER_SIZE * sizeof(char)),
+         *image_data = malloc(BUFFER_SIZE * sizeof(char)),
+         *image_src = malloc(BUFFER_SIZE * sizeof(char));
+
+    find_str(track_data, response, "\"is_local\" :", "\"popularity");
+    PRINT_SUCCESS("track_data");
+
+    find_str(track_name, track_data, "\"name\" :", ",\n");
+    PRINT_SUCCESS("track_name");
+    trim(track_name);
+        
+    find_str(artist_data, response, "\"artists\" : [ {", "],");
+    PRINT_SUCCESS("artist_data");
+
+    find_str(artist_name, artist_data, "\"name\" :", ",\n");
+    PRINT_SUCCESS("artist_name");
+    trim(artist_name);
+
+    find_str(image_data, response, "\"images\" : [ {", "\"width\"");
+    PRINT_SUCCESS("image_data");
+
+    find_str(image_src, image_data, "\"url\" :", ",\n");
+    PRINT_SUCCESS("image_src");
+    trim(image_src);
+    
+    printf("%s\n", track_name);
+    printf("%s\n", artist_name);
+    printf("%s\n", image_src);
+
+    snprintf(response_json, BUFFER_SIZE * sizeof(char), RESPONSE_JSON, track_name, artist_name, image_src); 
+    snprintf(get_response, BUFFER_SIZE * sizeof(char), GET_RESPONSE, response_json);
+    int success = send(thread_args.server->client_sock, get_response, strlen(get_response), 0);
+    if (success < 0) {
+        free(get_response);
+        PRINT_ERROR("send()");
+        exit(1);
+    }
+    else {
+        free(get_response);
+        PRINT_SUCCESS("send()");
+    }
+
+    // free(response);
+    // free(response_json);
+    // free(track_data);
+    // free(artist_data);
+    // free(artist_name);
+    // free(image_data);
+    // free(image_src);
 }
 
 void* handle_requests(void *args) {
-    Server_Info* server_info = (Server_Info*)args;
+    Server *server = (Server*)args;
+    char *data = malloc(BUFFER_SIZE * sizeof(char));
     while (1) {
-        char *data = malloc(BUFFER_SIZE * sizeof(char));
-        server_info->server->client_sock = accept(server_info->server->server_sock, NULL, NULL);
-        read(server_info->server->client_sock, data, BUFFER_SIZE * sizeof(char));
-
-        Thread_Args thread_args = { .data = data, .server_info = server_info };
-        if (strstr(thread_args.data, "GET")) {
-            handle_get_requests(thread_args);
+        server->client_sock = accept(server->server_sock, NULL, NULL);
+        printf("client_sock : %d\n", server->client_sock);
+        printf("server_sock : %d\n", server->server_sock);
+        if (server->client_sock > 0) {
+             read(server->client_sock, data, BUFFER_SIZE * sizeof(char));
+             if (data != NULL || strlen(data) > 0) {
+                 Thread_Args thread_args = { .data = data, .server = server };
+                 if (strstr(thread_args.data, "GET")) {
+                     handle_get_requests(thread_args);
+                 }   
+             }
+            shutdown(server->client_sock, SHUT_RDWR);
         }
-
-        free(data);
-        data = NULL;
-        shutdown(server_info->server->client_sock, SHUT_RDWR);
     }
+    free(data);
 }
 
-void update_token(Json_Object *settings, char *response, int grant_type) {
-    Json_Object *access_token = get_json_object_by_key(settings, ACCESS_TOKEN);
+void update_token(char *response, int grant_type) {
+    Json_Object *access_token = get_json_object_by_key(app_settings, ACCESS_TOKEN);
     access_token->value = get_settings_value(response, access_token->key);
 
-    Json_Object *expires_in = get_json_object_by_key(settings, EXPIRES_IN);
+    Json_Object *expires_in = get_json_object_by_key(app_settings, EXPIRES_IN);
     expires_in->value = get_settings_value(response, expires_in->key);
 
-    Json_Object *refresh_token = get_json_object_by_key(settings, REFRESH_TOKEN);
+    Json_Object *refresh_token = get_json_object_by_key(app_settings, REFRESH_TOKEN);
     if (grant_type == 1) {
         char *refresh_token_response = get_settings_value(response, refresh_token->key);
-        if (refresh_token_response != NULL) {
+        if (refresh_token_response != NULL && refresh_token_response[0] != '\0' && strlen(refresh_token_response) > 0) {
             refresh_token->value = refresh_token_response;
         }
     }
@@ -196,41 +188,38 @@ void update_token(Json_Object *settings, char *response, int grant_type) {
         refresh_token->value = get_settings_value(response, refresh_token->key);
     }
 
-    Json_Object *token_type = get_json_object_by_key(settings, TOKEN_TYPE);
-    token_type-> value = get_settings_value(response, token_type->key);
+    Json_Object *token_type = get_json_object_by_key(app_settings, TOKEN_TYPE);
+    token_type->value = get_settings_value(response, token_type->key);
 
-    update_setting(settings);
-    bind_settings(settings);
+    update_setting();
+    bind_settings();
 }
 
-void handle_access_token(Server_Info *server_info) {
+void handle_access_token(Server *server) {
     char *redirect_uri = malloc(BUFFER_SIZE * sizeof(char));
-    sprintf(redirect_uri, LOCALHOST_API_PATH, PORT, AUTHORIZATION_CODE_ENDPOINT);
-    get_authorization_token(server_info->settings, redirect_uri);
+    snprintf(redirect_uri, BUFFER_SIZE * sizeof(char), LOCALHOST_API_PATH, PORT, AUTHORIZATION_CODE_ENDPOINT);
+    get_authorization_token(redirect_uri);
 
     int status = 0;
     while (status == 0) {
-        status = handle_authorization_code(server_info);
+        status = handle_authorization_code(server);
     }
 
     if (status == 1) {
         PRINT_SUCCESS("Authorization");
+        update_token(get_access_token(redirect_uri), 0);
+        free(redirect_uri);
     }
 
-    update_token(server_info->settings, get_access_token(server_info->settings, redirect_uri), 0);
-
-    free(redirect_uri);
-    redirect_uri = NULL;
-
-    sleep(5);
+    sleep(3);
 }
 
 void* refresh_token_job(void* args) {
-    Json_Object *settings = (Json_Object *)args;
     while (1) {
-        Json_Object *expires_in = get_json_object_by_key(settings, EXPIRES_IN);
-        if (expires_in->value != NULL) {
-            update_token(settings, refresh_token(settings), 1);
+        Json_Object *expires_in = get_json_object_by_key(app_settings, EXPIRES_IN);
+        if (expires_in->value != NULL || expires_in->value[0] != '\0') {
+            char *token_response = refresh_token();
+            update_token(token_response, 1);
             PRINT_SUCCESS("Update Token");
             sleep(atoi(expires_in->value));
         }
@@ -240,10 +229,10 @@ void* refresh_token_job(void* args) {
     }
 }
 
-void init_jobs(Server_Info *server_info) {
+void init_jobs(Server *server) {
     pthread_t thread_refresh_token;
 
-    if (pthread_create(&thread_refresh_token, NULL, refresh_token_job, &server_info->settings)) {
+    if (pthread_create(&thread_refresh_token, NULL, refresh_token_job, &app_settings)) {
         printf("thread error\n");
         exit(1);
     }
