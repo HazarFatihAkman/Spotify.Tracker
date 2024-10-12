@@ -13,11 +13,10 @@
 #define BUFFER_SIZE 512
 
 //CHAR
-void trim(char*);
-void remove_char(char *, char);
-void remove_str(char*, char*);
-char* find_str(char*, char*, char*);
-char* get_str_between(char*, char*, char*);
+int trim(char*);
+int remove_char(char *, char);
+int remove_str(char*, char*);
+int find_str(char*, char*, char*, char*);
 
 //FOLDER_FILES
 int create_folder(char*);

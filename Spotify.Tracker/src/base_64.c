@@ -26,7 +26,6 @@ char* base64_encode(char *str) {
 
     char *response_str = malloc(len_6_bit * sizeof(char));
 
-                                                                            // to 8bit
     for (i = 0; i < len; i++) {
         for (j = 7; j >= 0; j--) {
             binary_8bit[k] = (str[i] >> j) & 1;
@@ -38,16 +37,15 @@ char* base64_encode(char *str) {
     j = 2;
 
     char *temp_str = malloc(8 * sizeof(char));
-                                                                            // you should add 00 at the start because that should be 8-bit code
+
     temp_str[0] = '0';
     temp_str[1] = '0';
 
-                                                                            // to decimal and get letter
     for (i = 1; i <= len_8_bit; i++) {
-        if (i % 6 == 0) {                                                   // binary_8-bit to 6-bit first
-            temp_str[j] = binary_8bit[z] + '0';                             // get binary number and set it
-            response_str[k] = encoding_table[strtol(temp_str, NULL, 2)];    // convert decimal to letter from encoding table
-            miss_bit_count = 6 - (len_8_bit - i);                            // check missing count of 8-bit
+        if (i % 6 == 0) {
+            temp_str[j] = binary_8bit[z] + '0';
+            response_str[k] = encoding_table[strtol(temp_str, NULL, 2)];
+            miss_bit_count = 6 - (len_8_bit - i);
             j = 2;
             k++;
         }
@@ -55,7 +53,7 @@ char* base64_encode(char *str) {
             temp_str[j] = binary_8bit[z] + '0';
             j++;
         }
-                                                                            // add missing ones to last and convert last decimal to letter to make it 6-bit
+
         for (miss_bit_count; miss_bit_count > 0 && miss_bit_count < 6 && i == len_8_bit; miss_bit_count--) {
             temp_str[j] = '0';
             j++;

@@ -4,34 +4,33 @@ void signature(void);
 
 int main(void) {
     signature();
-    Server_Info server_info = Server_Info_Const.new();
-    create_sources();
-    bind_settings(server_info.settings);
-    exit_resource_null(server_info.settings);
+    Server *server = Server_Const.new();
 
-    init_server(server_info.server);
+    create_sources();
+    bind_settings();
+    exit_resource_null(app_settings);
+    init_server(&server);
 
     pid_t child_pid = fork();
     if (child_pid < 0) {
         exit(1);
     }
     else if (child_pid == 0) {
-        if (is_api_credentials_null(server_info.settings)) {
-            handle_access_token(&server_info);
+        if (is_api_credentials_null(app_settings)) {
+            handle_access_token(server);
         }
     }
     else {
         wait(NULL);
         pthread_t thread_handle_client;
-        bind_settings(server_info.settings);
+        bind_settings();
 
-        if (pthread_create(&thread_handle_client, NULL, handle_requests, &server_info)) {
+        if (pthread_create(&thread_handle_client, NULL, handle_requests, &server)) {
             printf("thread error\n");
             exit(1);
         }
 
-        init_jobs(&server_info);
-
+        init_jobs(server);
         pthread_join(thread_handle_client, NULL);
     }
 }

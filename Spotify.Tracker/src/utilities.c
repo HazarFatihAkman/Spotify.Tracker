@@ -1,38 +1,60 @@
 #include "../include/utilities.h"
 
-void trim(char *str) {
-    int k = 0, is_word = 0;
-    for (int i = 0; i <= strlen(str); i++) {
-        if (is_word == 0) {
-            is_word = str[i] != ' ';
-        }
+int trim(char *str) {
+    if (str == NULL || str[0] == '\0') {
+        return 0;
+    }
 
-        if (is_word == 1) {
-            str[k] = str[i];
-            k++;
+    bool is_word = false;
+    int j = 0, first_char_index = -1, last_char_index;
+
+    for (int i = 0; i < strlen(str); i++) {
+        is_word = str[i] != ' ';
+        if (is_word && first_char_index == -1) {
+            first_char_index = i;
+        }
+        else if (is_word) {
+            last_char_index = i;
         }
     }
+    for (first_char_index; first_char_index <= last_char_index; first_char_index++) {
+        str[j++] = str[first_char_index];
+    }
+
+    str[j] = '\0';
+    return 1;
 }
 
-void remove_char(char *str, char remove_char) {
+int remove_char(char *str, char remove_char) {
+    if (str == NULL || str[0] == '\0') {
+        return 0;
+    }
+
     int i, j = 0;
     for (i = 0; i <= strlen(str); i++) {
         if (str[i] != remove_char) {
             str[j++] = str[i];
         }
     }
+    return 1;
 }
 
-void remove_str(char* str, char *remove_str) {
-    char *response_str = malloc(BUFFER_SIZE * sizeof(char));
+int remove_str(char* str, char *remove_str) {
+    if (str == NULL || str[0] == '\0' || remove_str == NULL || remove_str[0] == '\0') {
+        return 0;
+    }
+
     int k = 0, x = 0;
 
-    for (int i = 0; i <= strlen(str); i++) {
-        if (str[i] == remove_str[0] && str[i + 1] == remove_str[1]) {
+    for (int i = 0; i < strlen(str); i++) {
+        if (str[i] == remove_str[0]) {
             x = i;
-            for (int j = 0; j < strlen(remove_str) - 1; j++) {
+            for (int j = 0; j < strlen(remove_str); j++) {
                 if (str[i] != remove_str[j]) {
-                    i = x;
+                    i = x - 1;
+                    break;
+                }
+                else if (j == strlen(remove_str) - 1) {
                     break;
                 }
                 else {
@@ -41,93 +63,89 @@ void remove_str(char* str, char *remove_str) {
             }
         }
         else {
-            response_str[k] = str[i];
+            str[k] = str[i];
             k++;
         }
     }
 
-    strcpy(str, response_str);
+    str[k] = '\0';
+    return 1;
 }
 
-char* find_str(char *str, char *find, char *deliminiter) {
-    char* token = malloc(BUFFER_SIZE * sizeof(char));
-    token = strtok(str, deliminiter);
-
-    while (token != NULL) {
-        if (strstr(token, find)) {
-            return token;
-        }
-        token = strtok(NULL, deliminiter);
+int find_str(char *value, char *str, char *starts_with, char *ends_with) {
+    if (str == NULL || str[0] == '\0' || starts_with == NULL || starts_with[0] == '\0' || ends_with == NULL || ends_with[0] == '\0') {
+        return 0;
     }
 
-    return NULL;
-}
-
-char* get_str_between(char *str, char *starts_with, char *ends_with) {
-    char *response_str = malloc(BUFFER_SIZE * sizeof(char)),
-         *temp_starts_with = malloc(BUFFER_SIZE * sizeof(char)),
+    char *temp_starts_with = malloc(BUFFER_SIZE * sizeof(char)),
          *temp_ends_with = malloc(BUFFER_SIZE * sizeof(char));
 
-    int k = 0,
+    if (temp_starts_with == NULL || temp_ends_with == NULL) {
+        PRINT_ERROR("find_str()");
+        exit(1);
+    }
+
+    temp_starts_with[0] = '\0';
+    temp_ends_with[0] = '\0';
+
+    int starts_with_index = -1,
+        ends_with_index = -1,
+        starts_with_len = strlen(starts_with) - 1,
+        ends_with_len = strlen(ends_with) - 1,
         x = 0,
-        z = 0;
+        j = 0;
 
-    bool is_starts_with = false,
-        is_ends_with = false;
+    bool is_starts_with = false, is_ends_with = false;
 
-    for (int i = 0; i <= strlen(str); i++) {
-        is_starts_with = strstr(temp_starts_with, starts_with);
-        is_ends_with = strstr(temp_ends_with, ends_with);
+    for (int i = 0; i < strlen(str); i++) {
+        is_starts_with = temp_starts_with[0] != '\0' && strstr(temp_starts_with, starts_with) != NULL;
+        is_ends_with = temp_ends_with[0] != '\0' && strstr(temp_ends_with, ends_with) != NULL;
 
-        if (is_starts_with == 0) {
-            for (int j = 0; j <= strlen(starts_with); j++) {
-                x = i;
-                if (str[i] == starts_with[j]) {
-                    temp_starts_with[j] = str[i];
-                    i++;
-                }
-                else {
-                    i = x;
-                    break;
-                }
-            }
-        }
-        else if (is_ends_with == 0) {
-            if (str[i] == ends_with[0]) {
-                z = i;
-                for (int j = 0; j < strlen(ends_with); j++) {
-                    if (str[i] == ends_with[j]) {
-                        temp_ends_with[j] = str[i];
-                        i++;
-                        if (j == strlen(ends_with) - 1) {
-                            is_ends_with = strstr(temp_ends_with, ends_with);
-                            i = x - 1;
-                            break;
-                        }
+        if (!is_starts_with) {
+            if (str[i] == starts_with[0]) {
+                for (j = 0; j <= starts_with_len; j++) {
+                    if (str[i] == starts_with[j]) {
+                        temp_starts_with[j] = str[i++];
                     }
                     else {
-                        z += 2;
                         break;
+                    }
+
+                    if (j == starts_with_len) {
+                        starts_with_index = i;
                     }
                 }
             }
         }
-        else if (is_starts_with == 1 && is_ends_with == 1 && i < z) {
-            response_str[k] = str[i];
-            k++;
+        else if (!is_ends_with) {
+            if (str[i] == ends_with[0]) {
+                x = i;
+                for (j = 0; j <= ends_with_len; j++) {
+                    if (str[i] == ends_with[j]) {
+                        temp_ends_with[j] = str[i++];
+                    }
+                    if (j == ends_with_len) {
+                        ends_with_index = x;
+                    }
+                }
+            }
         }
-        else if (i == z) {
+        else {
             break;
         }
     }
 
+    j = 0;
+    for (starts_with_index; starts_with_index < ends_with_index; starts_with_index++) {
+        value[j++] = str[starts_with_index];
+    }
+
+    value[j] = '\0';
+
     free(temp_starts_with);
-    temp_starts_with = NULL;
-
     free(temp_ends_with);
-    temp_ends_with = NULL;
 
-    return response_str;
+    return 1;
 }
 
 int create_folder(char *folder_path) {
@@ -149,7 +167,7 @@ int create_folder(char *folder_path) {
 
 int create_file(char *folder_path, char *file_path) {
     char *full_path = malloc(BUFFER_SIZE * sizeof(char));
-    sprintf(full_path, "%s/%s", folder_path, file_path);
+    snprintf(full_path, BUFFER_SIZE * sizeof(char), "%s/%s", folder_path, file_path);
 
     if (access(full_path, F_OK) != -1) {
         PRINT_FILE_EXISTS(full_path);
@@ -176,7 +194,7 @@ int create_file(char *folder_path, char *file_path) {
 int create_file_with_content(char *folder_path, char *file_path, char *content) {
     if (create_file(folder_path, file_path) == 0) {
         char *full_path = malloc(BUFFER_SIZE * sizeof(char));
-        sprintf(full_path, "%s/%s", folder_path, file_path);
+        snprintf(full_path, BUFFER_SIZE * sizeof(char), "%s/%s", folder_path, file_path);
         FILE *file = fopen(full_path, "w");
         if (file == NULL) {
             return -1;
