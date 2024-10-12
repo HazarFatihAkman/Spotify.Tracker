@@ -32,3 +32,6 @@ Open your spotify on web/mobile/app and run this command on terminal (don't forg
 ### Spotify Design
 - Don't forget to follow [the guidlines](https://developer.spotify.com/documentation/design).
 - Send request to http://localhost:3131/api/current-track (I send request to here in every 3 seconds)
+
+### My Design 
+![Screenshot 2024-10-13 at 2 50 14 am](https://github.com/user-attachments/assets/f6fdde30-1abe-481f-8b6f-17c6b992c56c)
